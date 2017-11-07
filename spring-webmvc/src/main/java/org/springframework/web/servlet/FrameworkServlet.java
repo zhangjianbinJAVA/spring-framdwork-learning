@@ -491,6 +491,7 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 		long startTime = System.currentTimeMillis();
 
 		try {
+			// FIXME: 2017/11/6 查看 initWebApplicationContext() 方法，重点
 			this.webApplicationContext = initWebApplicationContext();
 			initFrameworkServlet();
 		}
@@ -537,6 +538,7 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 						// the root application context (if any; may be null) as the parent
 						cwac.setParent(rootContext);
 					}
+					// FIXME: 2017/11/6  查看该方法 重点
 					configureAndRefreshWebApplicationContext(cwac);
 				}
 			}
@@ -557,6 +559,7 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 			// Either the context is not a ConfigurableApplicationContext with refresh
 			// support or the context injected at construction time had already been
 			// refreshed -> trigger initial onRefresh manually here.
+			// FIXME: 2017/11/6 重点 调用 DispatcherServlet类中的 onRefresh()方法，对请求和响应做的一些初始化
 			onRefresh(wac);
 		}
 
@@ -650,7 +653,9 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 			}
 		}
 
+		// FIXME: 2017/11/6 在spring 中 设置servlet上下文
 		wac.setServletContext(getServletContext());
+		// FIXME: 2017/11/6 在spring 中 设置 servlet 的配置信息 如xml 中的 <init-param> …… </init-param>
 		wac.setServletConfig(getServletConfig());
 		wac.setNamespace(getNamespace());
 		wac.addApplicationListener(new SourceFilteringListener(wac, new ContextRefreshListener()));
@@ -658,6 +663,8 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 		// The wac environment's #initPropertySources will be called in any case when the context
 		// is refreshed; do it eagerly here to ensure servlet property sources are in place for
 		// use in any post-processing or initialization that occurs below prior to #refresh
+
+		// FIXME: 2017/11/6 在spring 中获取工作环境，就是 beans 标签下的 profile元素 ，可以指定是生产环境还是测试环境
 		ConfigurableEnvironment env = wac.getEnvironment();
 		if (env instanceof ConfigurableWebEnvironment) {
 			((ConfigurableWebEnvironment) env).initPropertySources(getServletContext(), getServletConfig());
@@ -665,6 +672,8 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 
 		postProcessWebApplicationContext(wac);
 		applyInitializers(wac);
+
+		// FIXME: 2017/11/6 重点 进入子类 AbstractApplicationContext 中的 refresh()方法
 		wac.refresh();
 	}
 

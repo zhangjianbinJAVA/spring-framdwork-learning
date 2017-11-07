@@ -178,6 +178,8 @@ public abstract class AbstractBeanDefinitionReader implements EnvironmentCapable
 		Assert.notNull(resources, "Resource array must not be null");
 		int counter = 0;
 		for (Resource resource : resources) {
+
+			// FIXME: 2017/11/6 //进入 XmlBeanDefinitionReader 类中的 loadBeanDefinitions 方法
 			counter += loadBeanDefinitions(resource);
 		}
 		return counter;

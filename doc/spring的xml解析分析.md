@@ -841,6 +841,7 @@ public BeanDefinition parseCustomElement(Element ele) {
 	
 public BeanDefinition parseCustomElement(Element ele, BeanDefinition containingBd) {
         //命名空间 namespaceUri， 也就是 beans 标签的 xmlns 、 xmlns:context、xmlns:aop、xmlns:tx 后面uri
+        // 根据某个标签获取对应的命名空间
 		String namespaceUri = getNamespaceURI(ele);
 		
 		// NamespaceHandler 是自定义标签的知识点
@@ -849,11 +850,13 @@ public BeanDefinition parseCustomElement(Element ele, BeanDefinition containingB
 		// 分析结果：解析命名空间 uri,同时实例化所对应的 命名空间处理类对象，这个解析过程会调用 命名空间处理类中的 init()方法
 	    //注册所有关于 这个命名空间 有关元素的所有 解析器，例如：`<context:annotation-config />` 的 annotation-config 元素解析器
 		NamespaceHandler handler = this.readerContext.getNamespaceHandlerResolver().resolve(namespaceUri);
-========================================================》		
+
 		if (handler == null) {
 			error("Unable to locate Spring NamespaceHandler for XML schema namespace [" + namespaceUri + "]", ele);
 			return null;
 		}
+		================================>> 分析完上面的代码后，继续分析
+		／／调用某个命名空间的处理器的 parse方法，如:ContextNamespaceHandler类 cotext 命名空间处理类. 请看下面的分析
 		return handler.parse(ele, new ParserContext(this.readerContext, this, containingBd));
 	}
 	
@@ -910,7 +913,8 @@ private Map<String, Object> getHandlerMappings() {
 			synchronized (this) {
 				if (this.handlerMappings == null) {
 					try {
-					    //加载所有 Propertie 配置文件，并放入 Properties 对象中
+					    //加载所有 spring 模块 的 Propertie 配置文件，并放入 Properties 对象中
+					    //查看其中的一个模块: 1.进入 spring-context 模块 2. 进入 resources/META-INF/ 文件夹下面
 						Properties mappings =
 								PropertiesLoaderUtils.loadAllProperties(this.handlerMappingsLocation, this.classLoader);
 						
@@ -939,7 +943,7 @@ private Map<String, Object> getHandlerMappings() {
 
 ### 查看 xmlns:context  的命名空间
 ```
-//加载所有 Propertie 配置文件
+//加载所有 spring 模块 的 Propertie 配置文件，并放入 Properties 对象中
 Properties mappings =
 		PropertiesLoaderUtils.loadAllProperties(this.handlerMappingsLocation, this.classLoader);						
 ```
@@ -987,5 +991,105 @@ public class ContextNamespaceHandler extends NamespaceHandlerSupport {
 ### context 命名空间 说明
 例如：`<context:annotation-config />`  
 context找uri，beans有content对应的uri  
-spring.handlers里面就有uri对应的处理类，实现NamespaceHandler，会把这个命名空间对应的标签对应的处理注册进来  
+`spring.handlers`里面就有uri对应的处理类，实现NamespaceHandler，会把这个命名空间对应的标签对应的处理注册进来  
  
+### 调用某个命名空间的处理器的 parse方法，请看下面的分析 
+```
+／／调用某个命名空间的处理器的 parse方法，查看该方法
+// 这里用了多态，调用的是 父类的 parse 方法，如:ContextNamespaceHandler类 context 命名空间处理类的父类方法。
+return handler.parse(ele, new ParserContext(this.readerContext, this, containingBd));
+
+//================================================>> handler.parse 方法的进一步说明
+// 如果些时解析的是 context 命名空间，那么这时 handler 就是 ContextNamespaceHandler类，再入 ContextNamespaceHandler类
+// 发现没有 parse，则查看父类 NamespaceHandlerSupport，发现 有 parse方法，目体代码如下：
+	@Override
+	public BeanDefinition parse(Element element, ParserContext parserContext) {
+		return findParserForElement(element, parserContext).parse(element, parserContext);
+	}
+// 因为 ContextNamespaceHandler类 的 init 方法，注册了很多标签解析类，并且 registerBeanDefinitionParser 方法在父类
+// 其实 registerBeanDefinitionParser 方法 就是将 命名空间下的 标签和对应的标签解析类，放入父类中的map中，代码如下：
+
+//进入该方法
+registerBeanDefinitionParser("annotation-config", new AnnotationConfigBeanDefinitionParser());
+
+// NamespaceHandlerSupport 类中的 registerBeanDefinitionParser 方法
+protected final void registerBeanDefinitionParser(String elementName, BeanDefinitionParser parser) {
+		// this.parsers 就是个map ,
+		// 存的结构如下：private final Map<String, BeanDefinitionParser> parsers =
+        //                        			new HashMap<String, BeanDefinitionParser>();
+        // key 就是 标签 ，value 就是 标签解析类
+		this.parsers.put(elementName, parser);
+	}
+//================================================>>
+
+//分析 handler.parse 方法
+@Override
+public BeanDefinition parse(Element element, ParserContext parserContext) {
+	// 进入 findParserForElement 方法，
+	// 分析结果：通过 标签名字获取到对应的标签解析类，
+	//findParserForElement(element, parserContext) 就是获得 标签的解析类
+	return findParserForElement(element, parserContext).parse(element, parserContext);
+	
+	// parse 方法分析：
+	// 通过 findParserForElement(element, parserContext) 就获取了 标签对应的解析类
+    // 例如：如果是 component-scan 标签的解析类 ComponentScanBeanDefinitionParser 类，那么调用的 parse方法
+    // 就是调用 component-scan 标签对应解析类的 parse 方法
+     registerBeanDefinitionParser("annotation-config", new AnnotationConfigBeanDefinitionParser());
+     
+     //=========================>> component-scan 标签的解析类 ComponentScanBeanDefinitionParser的 parse方法
+        @Override
+     	public BeanDefinition parse(Element element, ParserContext parserContext) {
+     		String basePackage = element.getAttribute(BASE_PACKAGE_ATTRIBUTE);
+     		basePackage = parserContext.getReaderContext().getEnvironment().resolvePlaceholders(basePackage);
+     		String[] basePackages = StringUtils.tokenizeToStringArray(basePackage,
+     				ConfigurableApplicationContext.CONFIG_LOCATION_DELIMITERS);
+     
+     		// Actually scan for bean definitions and register them.
+     		ClassPathBeanDefinitionScanner scanner = configureScanner(parserContext, element);
+     		Set<BeanDefinitionHolder> beanDefinitions = scanner.doScan(basePackages);
+     		registerComponents(parserContext.getReaderContext(), beanDefinitions, element);
+     
+     		return null;
+     	}
+     //=========================>> 
+}
+
+// findParserForElement 方法分析
+private BeanDefinitionParser findParserForElement(Element element, ParserContext parserContext) {
+		// 获得 标签的名字
+		String localName = parserContext.getDelegate().getLocalName(element);
+		// 从 this.parsers 也就是 从map 对象中 获取 标签的具体解析类，
+		// 因为之前解析命名空间时，就已经将 命名空间下的标签解析类放入map中了，
+		// 所以这里可以通过 标签名字获取到对应的标签解析类
+		BeanDefinitionParser parser = this.parsers.get(localName);
+
+		if (parser == null) {
+			parserContext.getReaderContext().fatal(
+					"Cannot locate BeanDefinitionParser for element [" + localName + "]", element);
+		}
+		return parser;
+}
+```
+
+### 自定义spring标签 思路
+1. 新建文件夹 resources/META-INF
+   新建文件 spring.handlers文件，内容：命名空间uri = uri处理类
+2. 新建文件 spring.schemas 文件 内容： http: xxx/xx/x.xsd = META-INF/x.xsd
+   xsd 文件 是 xml 的 约束文件  
+   ![](./img/自定义schemas文件.png)  
+3. xml文件中使用
+   ![](./img/xml文件中使用schemas.png)  
+
+***说明***  
+在xml文件中找到某个标签，通过标标签前缀就找到了 命名空间uri,在 spring.handlers文件中  
+就找到了uri 对应的命名空间处理类,在该类中的 init 方法中，将 xml 中自定义的标签及自定义的标签
+的解析器注册进来。
+
+- uri命名空间处理类  
+![](./img/uri命名空间处理类.png)
+
+- 自定义标签解析器   
+![](./img/自定义标签解析器.png)   
+   
+      
+   

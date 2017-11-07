@@ -90,7 +90,10 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 	public void registerBeanDefinitions(Document doc, XmlReaderContext readerContext) {
 		this.readerContext = readerContext;
 		logger.debug("Loading bean definitions");
+		// FIXME: 2017/11/6 //获取 Document 的根节点，根节点也就是 applicationContext.xml最外面的 beans 标签
 		Element root = doc.getDocumentElement();
+
+		// FIXME: 2017/11/6 //查看该方法
 		doRegisterBeanDefinitions(root);
 	}
 
@@ -124,6 +127,7 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 		this.delegate = createDelegate(getReaderContext(), root, parent);
 
 		if (this.delegate.isDefaultNamespace(root)) {
+			// FIXME: 2017/11/6 //查看 profile，也就是说 beans 上的标签可以配置 profile属性，来说明是生产环境还是测试环境
 			String profileSpec = root.getAttribute(PROFILE_ATTRIBUTE);
 			if (StringUtils.hasText(profileSpec)) {
 				String[] specifiedProfiles = StringUtils.tokenizeToStringArray(
@@ -139,7 +143,9 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 		}
 
 		preProcessXml(root);
+		// FIXME: 2017/11/6 //查看该方法
 		parseBeanDefinitions(root, this.delegate);
+
 		postProcessXml(root);
 
 		this.delegate = parent;
@@ -161,14 +167,17 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 	protected void parseBeanDefinitions(Element root, BeanDefinitionParserDelegate delegate) {
 		if (delegate.isDefaultNamespace(root)) {
 			NodeList nl = root.getChildNodes();
-			for (int i = 0; i < nl.getLength(); i++) {
+			for (int i = 0; i < nl.getLength(); i++) {// FIXME: 2017/11/6 //循环根元素,即 beans 标签下的所有节点
 				Node node = nl.item(i);
 				if (node instanceof Element) {
 					Element ele = (Element) node;
 					if (delegate.isDefaultNamespace(ele)) {
+
+						// FIXME: 2017/11/6 解析默认的元素 默认元素：import标签、alias 标签、bean 标签 、beans 标签
 						parseDefaultElement(ele, delegate);
 					}
 					else {
+						// FIXME: 2017/11/6 解析自定义的元素，是spring mvc 自定义的元素 重点
 						delegate.parseCustomElement(ele);
 					}
 				}
@@ -180,16 +189,19 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 	}
 
 	private void parseDefaultElement(Element ele, BeanDefinitionParserDelegate delegate) {
-		if (delegate.nodeNameEquals(ele, IMPORT_ELEMENT)) {
+		if (delegate.nodeNameEquals(ele, IMPORT_ELEMENT)) { // FIXME: 2017/11/6 // 解析 import 标签
 			importBeanDefinitionResource(ele);
 		}
-		else if (delegate.nodeNameEquals(ele, ALIAS_ELEMENT)) {
+		// FIXME: 2017/11/6 //alias 标签 说明：可以给 bean标签的id 起个别名，可以对一个bean 标签的id 起多个别名，都可以获取到这个bean对象
+		else if (delegate.nodeNameEquals(ele, ALIAS_ELEMENT)) { // FIXME: 2017/11/6 解析 alias 标签
 			processAliasRegistration(ele);
 		}
-		else if (delegate.nodeNameEquals(ele, BEAN_ELEMENT)) {
+		else if (delegate.nodeNameEquals(ele, BEAN_ELEMENT)) { // FIXME: 2017/11/6 解析 bean 标签，重点
+
 			processBeanDefinition(ele, delegate);
 		}
-		else if (delegate.nodeNameEquals(ele, NESTED_BEANS_ELEMENT)) {
+		else if (delegate.nodeNameEquals(ele, NESTED_BEANS_ELEMENT)) { // FIXME: 2017/11/6  解析 beans 标签
+
 			// recurse
 			doRegisterBeanDefinitions(ele);
 		}
@@ -296,6 +308,7 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 	 * and registering it with the registry.
 	 */
 	protected void processBeanDefinition(Element ele, BeanDefinitionParserDelegate delegate) {
+		// FIXME: 2017/11/6  查看该方法，返回 某一个元素的解析，即 BeanDefinition 的封装类 BeanDefinitionHolder
 		BeanDefinitionHolder bdHolder = delegate.parseBeanDefinitionElement(ele);
 		if (bdHolder != null) {
 			bdHolder = delegate.decorateBeanDefinitionIfRequired(ele, bdHolder);

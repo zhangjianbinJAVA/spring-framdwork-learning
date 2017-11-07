@@ -79,17 +79,25 @@ public abstract class AbstractXmlApplicationContext extends AbstractRefreshableC
 	@Override
 	protected void loadBeanDefinitions(DefaultListableBeanFactory beanFactory) throws BeansException, IOException {
 		// Create a new XmlBeanDefinitionReader for the given BeanFactory.
+		// FIXME: 2017/11/6 xml Reade 对象的定义
 		XmlBeanDefinitionReader beanDefinitionReader = new XmlBeanDefinitionReader(beanFactory);
 
 		// Configure the bean definition reader with this context's
 		// resource loading environment.
 		beanDefinitionReader.setEnvironment(this.getEnvironment());
+
+		// FIXME: 2017/11/6  放入 this,即 AbstractXmlApplicationContext 对象，没有报错:
+		// FIXME: 2017/11/6  因为AbstractXmlApplicationContext的父类ApplicationContext实现了ResourceLoader
+		// FIXME: 2017/11/6  所以 AbstractXmlApplicationContext类也是 ResourceLoader 类型的对象
 		beanDefinitionReader.setResourceLoader(this);
+
 		beanDefinitionReader.setEntityResolver(new ResourceEntityResolver(this));
 
 		// Allow a subclass to provide custom initialization of the reader,
 		// then proceed with actually loading the bean definitions.
 		initBeanDefinitionReader(beanDefinitionReader);
+
+		// FIXME: 2017/11/6  重点：查看这个方法
 		loadBeanDefinitions(beanDefinitionReader);
 	}
 
@@ -118,8 +126,15 @@ public abstract class AbstractXmlApplicationContext extends AbstractRefreshableC
 	 * @see #getResourcePatternResolver
 	 */
 	protected void loadBeanDefinitions(XmlBeanDefinitionReader reader) throws BeansException, IOException {
+		// FIXME: 2017/11/6 //getConfigResources() 方法进行子类 ClassPathXmlApplicationContext的 getConfigResources()方法中
+		// FIXME: 2017/11/6 //通过 getConfigResources() 这个方法将 所有 xml 文件封装成 Resource对象
+		// FIXME: 2017/11/6 //得到 Resource 对象就得到了文件所对应的 文件流，这个文件流在解析 xml 时会用到。
+		// FIXME: 2017/11/6 //resource == applicationContext.xml封装成resource对象
 		Resource[] configResources = getConfigResources();
+
 		if (configResources != null) {
+
+			// FIXME: 2017/11/6 //调用 xml 所对应的 Reader 类中的 loadBeanDefinitions 方法
 			reader.loadBeanDefinitions(configResources);
 		}
 		String[] configLocations = getConfigLocations();

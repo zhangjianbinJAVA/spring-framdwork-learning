@@ -60,12 +60,17 @@ public class BeanDefinitionReaderUtils {
 		bd.setParentName(parentName);
 		if (className != null) {
 			if (classLoader != null) {
+
+				// FIXME: 2017/11/6 设置 class 对象
 				bd.setBeanClass(ClassUtils.forName(className, classLoader));
 			}
 			else {
+				// FIXME: 2017/11/6 设置 class 对应的 className
 				bd.setBeanClassName(className);
 			}
 		}
+
+		// FIXME: 2017/11/6 返回 BeanDefinition 对象
 		return bd;
 	}
 

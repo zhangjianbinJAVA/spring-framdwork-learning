@@ -435,15 +435,17 @@ public class BeanDefinitionParserDelegate {
 	 * {@link org.springframework.beans.factory.parsing.ProblemReporter}.
 	 */
 	public BeanDefinitionHolder parseBeanDefinitionElement(Element ele, BeanDefinition containingBean) {
-		String id = ele.getAttribute(ID_ATTRIBUTE);
-		String nameAttr = ele.getAttribute(NAME_ATTRIBUTE);
+		String id = ele.getAttribute(ID_ATTRIBUTE); // FIXME: 2017/11/6 // bean标签的id
+		String nameAttr = ele.getAttribute(NAME_ATTRIBUTE); // FIXME: 2017/11/6 bean标签的 name
 
+		// FIXME: 2017/11/6 bean标签的 别名
 		List<String> aliases = new ArrayList<String>();
 		if (StringUtils.hasLength(nameAttr)) {
 			String[] nameArr = StringUtils.tokenizeToStringArray(nameAttr, MULTI_VALUE_ATTRIBUTE_DELIMITERS);
 			aliases.addAll(Arrays.asList(nameArr));
 		}
 
+		// FIXME: 2017/11/6 beanName 对应的 就是 bean 的id
 		String beanName = id;
 		if (!StringUtils.hasText(beanName) && !aliases.isEmpty()) {
 			beanName = aliases.remove(0);
@@ -454,9 +456,12 @@ public class BeanDefinitionParserDelegate {
 		}
 
 		if (containingBean == null) {
+
+			// FIXME: 2017/11/6  检查 bean 的name是否唯一,也就是 bean 的id名字是否唯一
 			checkNameUniqueness(beanName, aliases, ele);
 		}
 
+		// FIXME: 2017/11/6  查看该方法 重点
 		AbstractBeanDefinition beanDefinition = parseBeanDefinitionElement(ele, beanName, containingBean);
 		if (beanDefinition != null) {
 			if (!StringUtils.hasText(beanName)) {
@@ -488,6 +493,8 @@ public class BeanDefinitionParserDelegate {
 				}
 			}
 			String[] aliasesArray = StringUtils.toStringArray(aliases);
+
+			// FIXME: 2017/11/6  返回 BeanDefinition 的封装 对象 BeanDefinitionHolder，将bean的 名子和别名，以及BeanDefinition 放入该对象中
 			return new BeanDefinitionHolder(beanDefinition, beanName, aliasesArray);
 		}
 
@@ -526,6 +533,8 @@ public class BeanDefinitionParserDelegate {
 
 		String className = null;
 		if (ele.hasAttribute(CLASS_ATTRIBUTE)) {
+
+			// FIXME: 2017/11/6 获取 bean标签的 class属性，也就是类名
 			className = ele.getAttribute(CLASS_ATTRIBUTE).trim();
 		}
 
@@ -534,9 +543,15 @@ public class BeanDefinitionParserDelegate {
 			if (ele.hasAttribute(PARENT_ATTRIBUTE)) {
 				parent = ele.getAttribute(PARENT_ATTRIBUTE);
 			}
+
+			// FIXME: 2017/11/6 查看该方法,返回 BeanDefinition 对象
 			AbstractBeanDefinition bd = createBeanDefinition(className, parent);
 
+            // FIXME: 2017/11/6   解析 BeanDefinition 对象的属性，查看该方法
+            // FIXME: 2017/11/6 // 返回 BeanDefinition 对象，BeanDefinition就是对一系列元素的封装
+            // FIXME: 2017/11/6 // 所有出现在 xml中的标签都会封装在 BeanDefinition 对象中
 			parseBeanDefinitionAttributes(ele, beanName, containingBean, bd);
+
 			bd.setDescription(DomUtils.getChildElementValueByTagName(ele, DESCRIPTION_ELEMENT));
 
 			parseMetaElements(ele, bd);
@@ -578,8 +593,8 @@ public class BeanDefinitionParserDelegate {
 	public AbstractBeanDefinition parseBeanDefinitionAttributes(Element ele, String beanName,
 			BeanDefinition containingBean, AbstractBeanDefinition bd) {
 
-		if (ele.hasAttribute(SINGLETON_ATTRIBUTE)) {
-			error("Old 1.x 'singleton' attribute in use - upgrade to 'scope' declaration", ele);
+		if (ele.hasAttribute(SINGLETON_ATTRIBUTE)) { // FIXME: 2017/11/6 bean 的 sigleton
+            error("Old 1.x 'singleton' attribute in use - upgrade to 'scope' declaration", ele);
 		}
 		else if (ele.hasAttribute(SCOPE_ATTRIBUTE)) {
 			bd.setScope(ele.getAttribute(SCOPE_ATTRIBUTE));
@@ -657,7 +672,8 @@ public class BeanDefinitionParserDelegate {
 			bd.setFactoryBeanName(ele.getAttribute(FACTORY_BEAN_ATTRIBUTE));
 		}
 
-		return bd;
+        // FIXME: 2017/11/6 将一系列标签的 属性封装 到 BeanDefinition 对象中
+        return bd;
 	}
 
 	/**
@@ -670,7 +686,8 @@ public class BeanDefinitionParserDelegate {
 	protected AbstractBeanDefinition createBeanDefinition(String className, String parentName)
 			throws ClassNotFoundException {
 
-		return BeanDefinitionReaderUtils.createBeanDefinition(
+        // FIXME: 2017/11/6 查看该方法
+        return BeanDefinitionReaderUtils.createBeanDefinition(
 				parentName, className, this.readerContext.getBeanClassLoader());
 	}
 
@@ -1398,16 +1415,26 @@ public class BeanDefinitionParserDelegate {
 	}
 
 	public BeanDefinition parseCustomElement(Element ele) {
+		// FIXME: 2017/11/7  查看该方法
 		return parseCustomElement(ele, null);
 	}
 
 	public BeanDefinition parseCustomElement(Element ele, BeanDefinition containingBd) {
+        // FIXME: 2017/11/6 命名空间 namespaceUri， 也就是 beans 标签的 xmlns 、 xmlns:context、xmlns:aop、xmlns:tx 后面uri
+		// FIXME: 2017/11/7 根据某个标签获取对应的命名空间
 		String namespaceUri = getNamespaceURI(ele);
-		NamespaceHandler handler = this.readerContext.getNamespaceHandlerResolver().resolve(namespaceUri);
+
+        // FIXME: 2017/11/6  NamespaceHandler 是自定义标签的知识点
+        // FIXME: 2017/11/6  getNamespaceHandlerResolver() 命名空间的解析器
+        // FIXME: 2017/11/6  //查看 resolve(namespaceUri) 方法 ,则进入 DefaultNamespaceHandlerResolver 中的 resolve(namespaceUri) 方法
+        // FIXME: 2017/11/6 // 分析结果：解析命名空间 uri,同时实例化所对应的 命名空间处理类对象，这个解析过程会调用 命名空间处理类中的 init()方法
+        // FIXME: 2017/11/6 //注册所有关于 这个命名空间 有关元素的所有 解析器，例如：`<context:annotation-config />` 的 annotation-config 元素解析器
+        NamespaceHandler handler = this.readerContext.getNamespaceHandlerResolver().resolve(namespaceUri);
 		if (handler == null) {
 			error("Unable to locate Spring NamespaceHandler for XML schema namespace [" + namespaceUri + "]", ele);
 			return null;
 		}
+		// FIXME: 2017/11/7 调用某个命名空间的处理器的 parse方法, 如 ContextNamespaceHandler类 cotext 命名空间处理类
 		return handler.parse(ele, new ParserContext(this.readerContext, this, containingBd));
 	}
 

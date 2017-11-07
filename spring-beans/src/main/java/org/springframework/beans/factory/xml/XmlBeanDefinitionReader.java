@@ -301,6 +301,7 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 	 */
 	@Override
 	public int loadBeanDefinitions(Resource resource) throws BeanDefinitionStoreException {
+		// FIXME: 2017/11/6  EncodedResource 类是对 Resource 的再次封装，将 Resource 所对应的编码方式也封装进来了
 		return loadBeanDefinitions(new EncodedResource(resource));
 	}
 
@@ -327,12 +328,16 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 					"Detected cyclic loading of " + encodedResource + " - check your import definitions!");
 		}
 		try {
+
+			// FIXME: 2017/11/6  //获取 resource 的输入流，也就是配置文件xml的输入流
 			InputStream inputStream = encodedResource.getResource().getInputStream();
 			try {
+				// FIXME: 2017/11/6 xml解析工具有：dom4j、sax  //spring 使用 xml解析工具，即dom解析---> jdk中的api
 				InputSource inputSource = new InputSource(inputStream);
 				if (encodedResource.getEncoding() != null) {
 					inputSource.setEncoding(encodedResource.getEncoding());
 				}
+				// FIXME: 2017/11/6 查看该方法
 				return doLoadBeanDefinitions(inputSource, encodedResource.getResource());
 			}
 			finally {
@@ -388,7 +393,10 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 	protected int doLoadBeanDefinitions(InputSource inputSource, Resource resource)
 			throws BeanDefinitionStoreException {
 		try {
+			// FIXME: 2017/11/6  xml 解析的  Document 对象，applicationContext.xml 就是 Document 查看 doLoadDocument方法
 			Document doc = doLoadDocument(inputSource, resource);
+
+			// FIXME: 2017/11/6 分析该方法 查看  registerBeanDefinitions 方法
 			return registerBeanDefinitions(doc, resource);
 		}
 		catch (BeanDefinitionStoreException ex) {
@@ -426,6 +434,7 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 	 * @see DocumentLoader#loadDocument
 	 */
 	protected Document doLoadDocument(InputSource inputSource, Resource resource) throws Exception {
+		// FIXME: 2017/11/6  查看该方法 this.documentLoader.loadDocument 方法
 		return this.documentLoader.loadDocument(inputSource, getEntityResolver(), this.errorHandler,
 				getValidationModeForResource(resource), isNamespaceAware());
 	}
@@ -503,8 +512,10 @@ public class XmlBeanDefinitionReader extends AbstractBeanDefinitionReader {
 	 * @see BeanDefinitionDocumentReader#registerBeanDefinitions
 	 */
 	public int registerBeanDefinitions(Document doc, Resource resource) throws BeanDefinitionStoreException {
+		// FIXME: 2017/11/6 //获取reader对象，也就是 Document 的解析器
 		BeanDefinitionDocumentReader documentReader = createBeanDefinitionDocumentReader();
 		int countBefore = getRegistry().getBeanDefinitionCount();
+		// FIXME: 2017/11/6 //查看该方法
 		documentReader.registerBeanDefinitions(doc, createReaderContext(resource));
 		return getRegistry().getBeanDefinitionCount() - countBefore;
 	}

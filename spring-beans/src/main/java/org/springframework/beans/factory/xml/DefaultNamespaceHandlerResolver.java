@@ -111,8 +111,12 @@ public class DefaultNamespaceHandlerResolver implements NamespaceHandlerResolver
 	 */
 	@Override
 	public NamespaceHandler resolve(String namespaceUri) {
+		// FIXME: 2017/11/6  查看 getHandlerMappings() 方法
 		Map<String, Object> handlerMappings = getHandlerMappings();
+
+		// FIXME: 2017/11/6 通过上面返回的map对象，根据 namespaceUri 找到所对应的 处理类
 		Object handlerOrClassName = handlerMappings.get(namespaceUri);
+
 		if (handlerOrClassName == null) {
 			return null;
 		}
@@ -122,13 +126,20 @@ public class DefaultNamespaceHandlerResolver implements NamespaceHandlerResolver
 		else {
 			String className = (String) handlerOrClassName;
 			try {
+				// FIXME: 2017/11/6 找到 命名空间所对应的处理类，通过反射 出来 class 对象
 				Class<?> handlerClass = ClassUtils.forName(className, this.classLoader);
+				
 				if (!NamespaceHandler.class.isAssignableFrom(handlerClass)) {
 					throw new FatalBeanException("Class [" + className + "] for namespace [" + namespaceUri +
 							"] does not implement the [" + NamespaceHandler.class.getName() + "] interface");
 				}
+				// FIXME: 2017/11/6 将 命名空间所对应的处理类 实例化出来
 				NamespaceHandler namespaceHandler = (NamespaceHandler) BeanUtils.instantiateClass(handlerClass);
+
+				// FIXME: 2017/11/6 调用 命名空间所对应的处理类 的init() 方法
 				namespaceHandler.init();
+
+				// FIXME: 2017/11/6 将 命名空间的uri 和 命名空间处理类 对象 存放入 map 中
 				handlerMappings.put(namespaceUri, namespaceHandler);
 				return namespaceHandler;
 			}
@@ -151,13 +162,21 @@ public class DefaultNamespaceHandlerResolver implements NamespaceHandlerResolver
 			synchronized (this) {
 				if (this.handlerMappings == null) {
 					try {
+						// FIXME: 2017/11/6 加载所有 spring 模块 的 Propertie 配置文件，并放入 Properties 对象中
+						// FIXME: 2017/11/7 查看其中的一个模块 1.进入 spring-context 模块 2. 进入 resources/META-INF/ 文件夹下面
 						Properties mappings =
 								PropertiesLoaderUtils.loadAllProperties(this.handlerMappingsLocation, this.classLoader);
+						
 						if (logger.isDebugEnabled()) {
 							logger.debug("Loaded NamespaceHandler mappings: " + mappings);
 						}
+
+						// FIXME: 2017/11/6 创建 handlerMappings 对象，也就是map对象					
 						Map<String, Object> handlerMappings = new ConcurrentHashMap<String, Object>(mappings.size());
+
+						// FIXME: 2017/11/6 查看该方法，将 Properties 对象也就是 key=value 的形式 放入 handlerMappings 对象中，
 						CollectionUtils.mergePropertiesIntoMap(mappings, handlerMappings);
+
 						this.handlerMappings = handlerMappings;
 					}
 					catch (IOException ex) {
@@ -167,6 +186,8 @@ public class DefaultNamespaceHandlerResolver implements NamespaceHandlerResolver
 				}
 			}
 		}
+
+		// FIXME: 2017/11/6 返回 上面定义的 map对象
 		return this.handlerMappings;
 	}
 

@@ -114,15 +114,19 @@ public abstract class HttpServletBean extends HttpServlet
 	 */
 	@Override
 	public final void init() throws ServletException {
+        // FIXME: 2017/11/6 当初始化容器时第一个打印的就是这个日志
 		if (logger.isDebugEnabled()) {
 			logger.debug("Initializing servlet '" + getServletName() + "'");
 		}
 
 		// Set bean properties from init parameters.
 		try {
-			PropertyValues pvs = new ServletConfigPropertyValues(getServletConfig(), this.requiredProperties);
-			BeanWrapper bw = PropertyAccessorFactory.forBeanPropertyAccess(this);
-			ResourceLoader resourceLoader = new ServletContextResourceLoader(getServletContext());
+            // FIXME: 2017/11/6 包装 bean的属性
+            PropertyValues pvs = new ServletConfigPropertyValues(getServletConfig(), this.requiredProperties);
+            // FIXME: 2017/11/6 包装 bean 实例
+            BeanWrapper bw = PropertyAccessorFactory.forBeanPropertyAccess(this);
+            // FIXME: 2017/11/6 获取配置文件
+            ResourceLoader resourceLoader = new ServletContextResourceLoader(getServletContext());
 			bw.registerCustomEditor(Resource.class, new ResourceEditor(resourceLoader, getEnvironment()));
 			initBeanWrapper(bw);
 			bw.setPropertyValues(pvs, true);
@@ -133,7 +137,8 @@ public abstract class HttpServletBean extends HttpServlet
 		}
 
 		// Let subclasses do whatever initialization they like.
-		initServletBean();
+        // FIXME: 2017/11/6 //调用子类方法，由上面的类图可知会调用：FrameworkServlet中的initServletBean()方法
+        initServletBean();
 
 		if (logger.isDebugEnabled()) {
 			logger.debug("Servlet '" + getServletName() + "' configured successfully");

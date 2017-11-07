@@ -68,11 +68,15 @@ public class DefaultDocumentLoader implements DocumentLoader {
 	public Document loadDocument(InputSource inputSource, EntityResolver entityResolver,
 			ErrorHandler errorHandler, int validationMode, boolean namespaceAware) throws Exception {
 
+		// FIXME: 2017/11/6  jdk 中的 dom解析 工作  DocumentBuilderFactory
 		DocumentBuilderFactory factory = createDocumentBuilderFactory(validationMode, namespaceAware);
 		if (logger.isDebugEnabled()) {
 			logger.debug("Using JAXP provider [" + factory.getClass().getName() + "]");
 		}
+		// FIXME: 2017/11/6 获取 DocumentBuilder 对象
 		DocumentBuilder builder = createDocumentBuilder(factory, entityResolver, errorHandler);
+
+		// FIXME: 2017/11/6 使用 DocumentBuilder 对象 解析 xml，返回 Document 对象
 		return builder.parse(inputSource);
 	}
 
