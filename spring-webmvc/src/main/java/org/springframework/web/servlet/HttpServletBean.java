@@ -120,6 +120,7 @@ public abstract class HttpServletBean extends HttpServlet
 		}
 
 		// Set bean properties from init parameters.
+		// FIXME: 2017/11/8  从init参数中设置bean属性
 		try {
             // FIXME: 2017/11/6 包装 bean的属性
             PropertyValues pvs = new ServletConfigPropertyValues(getServletConfig(), this.requiredProperties);

@@ -217,6 +217,7 @@ refresh() 方法在哪些子类中
 ### 分析 obtainFreshBeanFactory()
 ```
 protected ConfigurableListableBeanFactory obtainFreshBeanFactory() {
+        // 查看该方法
 		refreshBeanFactory();
 		ConfigurableListableBeanFactory beanFactory = getBeanFactory();
 		if (logger.isDebugEnabled()) {
@@ -233,7 +234,7 @@ protected ConfigurableListableBeanFactory obtainFreshBeanFactory() {
 @Override
 	protected final void refreshBeanFactory() throws BeansException {
 		//判断bean容器是否已经存在了,如果存在了就表示 bean容器已经启动成功了
-		if (hasBeanFactory()) {
+		if (hasBeanFactory()) { // 这个不会执行，只是spring 的容错措施
 			destroyBeans();
 			closeBeanFactory();
 		}
@@ -268,7 +269,7 @@ loadBeanDefinitions方法在哪些子类中
 	protected void loadBeanDefinitions(DefaultListableBeanFactory beanFactory) throws BeansException, IOException {
 		// Create a new XmlBeanDefinitionReader for the given BeanFactory.
 		
-		// xml Reade 对象的定义
+		// xml Reade 对象的定义 Reader对象将xml配置封装成 BeanDefinition
 		XmlBeanDefinitionReader beanDefinitionReader = new XmlBeanDefinitionReader(beanFactory);
 
 		// Configure the bean definition reader with this context's
@@ -308,7 +309,7 @@ loadBeanDefinitions方法在哪些子类中
 ```
 protected void loadBeanDefinitions(XmlBeanDefinitionReader reader) throws BeansException, IOException {
 		
-		//getConfigResources() 方法进行子类 ClassPathXmlApplicationContext的 getConfigResources()方法中
+		//getConfigResources() 方法进入子类 ClassPathXmlApplicationContext的 getConfigResources()方法中
 		//通过 getConfigResources() 这个方法将 所有 xml 文件封装成 Resource对象
 		//得到 Resource 对象就得到了文件所对应的 文件流，这个文件流在解析 xml 时会用到。
 		//resource == applicationContext.xml封装成resource对象
@@ -573,6 +574,7 @@ protected void processBeanDefinition(Element ele, BeanDefinitionParserDelegate d
 	
 //分析delegate.parseBeanDefinitionElement(ele) 方法
 public BeanDefinitionHolder parseBeanDefinitionElement(Element ele) {
+        // 查看该方法
 		return parseBeanDefinitionElement(ele, null);
 	}
 
@@ -835,6 +837,7 @@ public AbstractBeanDefinition parseBeanDefinitionAttributes(Element ele, String 
 ### 分析 解析自定义的元素,也就 是spring mvc 自定义的元素 
 ```
 public BeanDefinition parseCustomElement(Element ele) {
+        // 查看该方法
 		return parseCustomElement(ele, null);
 	}
 
@@ -847,6 +850,7 @@ public BeanDefinition parseCustomElement(Element ele, BeanDefinition containingB
 		// NamespaceHandler 是自定义标签的知识点
 		// getNamespaceHandlerResolver() 命名空间的解析器
 		//查看 resolve(namespaceUri) 方法 ,则进入 DefaultNamespaceHandlerResolver 中的 resolve(namespaceUri) 方法
+		
 		// 分析结果：解析命名空间 uri,同时实例化所对应的 命名空间处理类对象，这个解析过程会调用 命名空间处理类中的 init()方法
 	    //注册所有关于 这个命名空间 有关元素的所有 解析器，例如：`<context:annotation-config />` 的 annotation-config 元素解析器
 		NamespaceHandler handler = this.readerContext.getNamespaceHandlerResolver().resolve(namespaceUri);
@@ -855,7 +859,7 @@ public BeanDefinition parseCustomElement(Element ele, BeanDefinition containingB
 			error("Unable to locate Spring NamespaceHandler for XML schema namespace [" + namespaceUri + "]", ele);
 			return null;
 		}
-		================================>> 分析完上面的代码后，继续分析
+		================================>> 分析完上面的代码后，继续分析，
 		／／调用某个命名空间的处理器的 parse方法，如:ContextNamespaceHandler类 cotext 命名空间处理类. 请看下面的分析
 		return handler.parse(ele, new ParserContext(this.readerContext, this, containingBd));
 	}
@@ -925,6 +929,7 @@ private Map<String, Object> getHandlerMappings() {
 						Map<String, Object> handlerMappings = new ConcurrentHashMap<String, Object>(mappings.size());
 						
 						//查看该方法，将 Properties 对象也就是 key=value 的形式 放入 handlerMappings 对象中，
+						//key :命名空间uri  value:命名空间uri处理器
 						CollectionUtils.mergePropertiesIntoMap(mappings, handlerMappings);
 						this.handlerMappings = handlerMappings;
 					}
@@ -951,7 +956,7 @@ Properties mappings =
 2. 进入 resources/META-INF/ 文件夹下面
 3. 查看 spring.handlers 配置文件
    可以看到每个命名空间的url 对应一个类。
-   例如 xmlns:context 对应的 url `http\://www.springframework.org/schema/context` 对应 ContextNamespaceHandler 类
+   例如 xmlns:context 对应的 uri `http\://www.springframework.org/schema/context` 对应 ContextNamespaceHandler 类
    每一个命名空间都有对应的解析类 NamespaceHandler ，每一个 命名空间解析类中都有所对应的 命名空间的元素解析器
    ```
     http\://www.springframework.org/schema/context=org.springframework.context.config.ContextNamespaceHandler
@@ -993,6 +998,7 @@ public class ContextNamespaceHandler extends NamespaceHandlerSupport {
 context找uri，beans有content对应的uri  
 `spring.handlers`里面就有uri对应的处理类，实现NamespaceHandler，会把这个命名空间对应的标签对应的处理注册进来  
  
+### 返回 BeanDefinitionParserDelegate 中的  parseCustomElement(Element ele, BeanDefinition containingBd) 方法中最后一行
 ### 调用某个命名空间的处理器的 parse方法，请看下面的分析 
 ```
 ／／调用某个命名空间的处理器的 parse方法，查看该方法
@@ -1000,11 +1006,15 @@ context找uri，beans有content对应的uri
 return handler.parse(ele, new ParserContext(this.readerContext, this, containingBd));
 
 //================================================>> handler.parse 方法的进一步说明
-// 如果些时解析的是 context 命名空间，那么这时 handler 就是 ContextNamespaceHandler类，再入 ContextNamespaceHandler类
+// 如果此时解析的是 context 命名空间，那么这时 handler 就是 ContextNamespaceHandler类，再进入 ContextNamespaceHandler类
 // 发现没有 parse，则查看父类 NamespaceHandlerSupport，发现 有 parse方法，目体代码如下：
 	@Override
 	public BeanDefinition parse(Element element, ParserContext parserContext) {
 		return findParserForElement(element, parserContext).parse(element, parserContext);
+		 // ===============================>>
+		    // 分析完 findParserForElement(element, parserContext) 方法 ，就获得到了某个具体的解析器，
+		    // 在这里要重点分析一下  ComponentScanBeanDefinitionParser 解析类，具体看下面
+		  // ===============================>>
 	}
 // 因为 ContextNamespaceHandler类 的 init 方法，注册了很多标签解析类，并且 registerBeanDefinitionParser 方法在父类
 // 其实 registerBeanDefinitionParser 方法 就是将 命名空间下的 标签和对应的标签解析类，放入父类中的map中，代码如下：
@@ -1032,7 +1042,7 @@ public BeanDefinition parse(Element element, ParserContext parserContext) {
 	
 	// parse 方法分析：
 	// 通过 findParserForElement(element, parserContext) 就获取了 标签对应的解析类
-    // 例如：如果是 component-scan 标签的解析类 ComponentScanBeanDefinitionParser 类，那么调用的 parse方法
+    // 例如：如果这时 component-scan 标签的那么解析类就是 ComponentScanBeanDefinitionParser 类，那么调用的 parse方法
     // 就是调用 component-scan 标签对应解析类的 parse 方法
      registerBeanDefinitionParser("annotation-config", new AnnotationConfigBeanDefinitionParser());
      
@@ -1091,5 +1101,121 @@ private BeanDefinitionParser findParserForElement(Element element, ParserContext
 - 自定义标签解析器   
 ![](./img/自定义标签解析器.png)   
    
+      
+----        
+## 分析 component-scan 标签解析类 ComponentScanBeanDefinitionParser
+> 标签解析类在 ContextNamespaceHandler 类，即 context 命名空间处理类中
+
+### 激活Spring注解方式：自动扫描 配置说明
+```
+<!-- 激活Spring注解方式：自动扫描，并注入bean -->
+<context:component-scan base-package="com.consult.action" use-default-filters="" annotation-config="">
+<context:include-filter type="annotation"
+expression="org.springframework.stereotype.Controller" />
+<context:exclude-filter type="annotation"
+expression="org.springframework.stereotype.Service" />
+</context:component-scan>
+```
+- base-package 扫描指定的包，即 com.consult.action
+- type 的支持类型：
+    - annotation 时，表示只有 org.springframework.stereotype.Controller 这个注解时，采会扫描到，其它的不会被扫描到
+    - Annotation 时，表示 org.example.SomeAnnotation符合SomeAnnoation的target class
+        - 只有指定的注解时
+    - ssignable 时， 表示 org.example.SomeClass指定class或interface的全名
+        - 只有单个类或者接口
+    - Aspectj  时，  表示 org.example..*Service+AspectJ语法
+        - aop 的写法
+    - Regex   时，   表示 org\.example\.Default.*   Regelar Expression 
+        - 正则表达式的写法
+    - Custom  时，   表示 org.example.MyTypeFilterSpring3新增自定义 Type，作org.springframework.core.type.TypeFilter
+        - 自定义的写法
+        
+### 在ComponentScanBeanDefinitionParser解析类里面完成了
+1. 基本包的扫描
+2. 类型过滤器的配置
+3. annotation-config配置的兼容
+4. **注解处理器BeanPostProcessor的注册**
+
+### ComponentScanBeanDefinitionParser 解析器 parse方法
+```
+    @Override
+	public BeanDefinition parse(Element element, ParserContext parserContext) {
+	    // 这里具体的标签为 <context:component-scan  base-package="com.consult.action" />
+	    // 获取标签的属性 base-package的值
+		String basePackage = element.getAttribute(BASE_PACKAGE_ATTRIBUTE);
+		basePackage = parserContext.getReaderContext().getEnvironment().resolvePlaceholders(basePackage);
+		
+		//配置多个包是以 逗号分隔的，所以这里要将以逗号分隔的包转化为数组
+		String[] basePackages = StringUtils.tokenizeToStringArray(basePackage,
+				ConfigurableApplicationContext.CONFIG_LOCATION_DELIMITERS);
+
+		// Actually scan for bean definitions and register them.
+		
+		// 查看该方法
+		ClassPathBeanDefinitionScanner scanner = configureScanner(parserContext, element);
+		Set<BeanDefinitionHolder> beanDefinitions = scanner.doScan(basePackages);
+		registerComponents(parserContext.getReaderContext(), beanDefinitions, element);
+
+		return null;
+	}
+	
+	
+protected ClassPathBeanDefinitionScanner configureScanner(ParserContext parserContext, Element element) {
+	
+	    // 使用默认的过滤器，默认值为 true
+		boolean useDefaultFilters = true;
+		
+		if (element.hasAttribute(USE_DEFAULT_FILTERS_ATTRIBUTE)) {//当有该属性时，就使用默认值
+			useDefaultFilters = Boolean.valueOf(element.getAttribute(USE_DEFAULT_FILTERS_ATTRIBUTE));
+		}
+
+		// Delegate bean definition registration to scanner class.
+		
+		//创建 扫描器，扫描包下的所有文件 ，查看该方法
+		ClassPathBeanDefinitionScanner scanner = createScanner(parserContext.getReaderContext(), useDefaultFilters);
+		scanner.setResourceLoader(parserContext.getReaderContext().getResourceLoader());
+		scanner.setEnvironment(parserContext.getReaderContext().getEnvironment());
+		scanner.setBeanDefinitionDefaults(parserContext.getDelegate().getBeanDefinitionDefaults());
+		scanner.setAutowireCandidatePatterns(parserContext.getDelegate().getAutowireCandidatePatterns());
+
+		if (element.hasAttribute(RESOURCE_PATTERN_ATTRIBUTE)) {
+			scanner.setResourcePattern(element.getAttribute(RESOURCE_PATTERN_ATTRIBUTE));
+		}
+
+		try {
+			parseBeanNameGenerator(element, scanner);
+		}
+		catch (Exception ex) {
+			parserContext.getReaderContext().error(ex.getMessage(), parserContext.extractSource(element), ex.getCause());
+		}
+
+		try {
+			parseScope(element, scanner);
+		}
+		catch (Exception ex) {
+			parserContext.getReaderContext().error(ex.getMessage(), parserContext.extractSource(element), ex.getCause());
+		}
+
+		parseTypeFilters(element, scanner, parserContext);
+
+		return scanner;
+	}	
+	
+
+protected ClassPathBeanDefinitionScanner createScanner(XmlReaderContext readerContext, boolean useDefaultFilters) {
+        // 查看该方法	
+		return new ClassPathBeanDefinitionScanner(readerContext.getRegistry(), useDefaultFilters);
+}	
+
+public ClassPathBeanDefinitionScanner(BeanDefinitionRegistry registry, boolean useDefaultFilters) {
+
+    		this(registry, useDefaultFilters, getOrCreateEnvironment(registry));
+	}
+```
+        
+
+
+      
+      
       
    

@@ -175,6 +175,7 @@ public class DefaultNamespaceHandlerResolver implements NamespaceHandlerResolver
 						Map<String, Object> handlerMappings = new ConcurrentHashMap<String, Object>(mappings.size());
 
 						// FIXME: 2017/11/6 查看该方法，将 Properties 对象也就是 key=value 的形式 放入 handlerMappings 对象中，
+						// // FIXME: 2017/11/8  key :命名空间uri  value:命名空间uri处理器
 						CollectionUtils.mergePropertiesIntoMap(mappings, handlerMappings);
 
 						this.handlerMappings = handlerMappings;

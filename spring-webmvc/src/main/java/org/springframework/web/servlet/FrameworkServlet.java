@@ -538,7 +538,7 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 						// the root application context (if any; may be null) as the parent
 						cwac.setParent(rootContext);
 					}
-					// FIXME: 2017/11/6  查看该方法 重点
+					// FIXME: 2017/11/6  查看该方法 配置和刷新Web应用程序上下文 重点
 					configureAndRefreshWebApplicationContext(cwac);
 				}
 			}

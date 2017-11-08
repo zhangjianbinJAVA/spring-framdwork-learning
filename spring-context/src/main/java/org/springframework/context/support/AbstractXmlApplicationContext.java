@@ -79,7 +79,7 @@ public abstract class AbstractXmlApplicationContext extends AbstractRefreshableC
 	@Override
 	protected void loadBeanDefinitions(DefaultListableBeanFactory beanFactory) throws BeansException, IOException {
 		// Create a new XmlBeanDefinitionReader for the given BeanFactory.
-		// FIXME: 2017/11/6 xml Reade 对象的定义
+		// FIXME: 2017/11/6 xml Reade 对象的定义 Reader对象将xml配置封装成 BeanDefinition
 		XmlBeanDefinitionReader beanDefinitionReader = new XmlBeanDefinitionReader(beanFactory);
 
 		// Configure the bean definition reader with this context's
@@ -129,7 +129,7 @@ public abstract class AbstractXmlApplicationContext extends AbstractRefreshableC
 		// FIXME: 2017/11/6 //getConfigResources() 方法进行子类 ClassPathXmlApplicationContext的 getConfigResources()方法中
 		// FIXME: 2017/11/6 //通过 getConfigResources() 这个方法将 所有 xml 文件封装成 Resource对象
 		// FIXME: 2017/11/6 //得到 Resource 对象就得到了文件所对应的 文件流，这个文件流在解析 xml 时会用到。
-		// FIXME: 2017/11/6 //resource == applicationContext.xml封装成resource对象
+		// FIXME: 2017/11/6 //resource == applicationContext.xml 封装成resource对象
 		Resource[] configResources = getConfigResources();
 
 		if (configResources != null) {

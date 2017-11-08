@@ -119,7 +119,7 @@ public abstract class AbstractRefreshableApplicationContext extends AbstractAppl
 	@Override
 	protected final void refreshBeanFactory() throws BeansException {
 		// FIXME: 2017/11/6 判断bean容器是否已经存在了,如果存在了就表示 bean容器已经启动成功了
-		if (hasBeanFactory()) {
+		if (hasBeanFactory()) {// 这个不会执行，只是spring 的容错措施
 			destroyBeans();
 			closeBeanFactory();
 		}
