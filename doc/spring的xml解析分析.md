@@ -1117,7 +1117,7 @@ expression="org.springframework.stereotype.Service" />
 </context:component-scan>
 ```
 - base-package 扫描指定的包，即 com.consult.action
-- type 的支持类型：
+- type 的支持类型：（类型的支持情况在 ComponentScanBeanDefinitionParser类的createTypeFilter方法中）
     - annotation 时，表示只有 org.springframework.stereotype.Controller 这个注解时，采会扫描到，其它的不会被扫描到
     - Annotation 时，表示 org.example.SomeAnnotation符合SomeAnnoation的target class
         - 只有指定的注解时
@@ -1151,30 +1151,34 @@ expression="org.springframework.stereotype.Service" />
 
 		// Actually scan for bean definitions and register them.
 		
-		// 查看该方法
+		// 查看该方法 ，俱体分析看下面，看到 分析 ComponentScanBeanDefinitionParser 类中的 parseTypeFilters 方法分析完毕为止
 		ClassPathBeanDefinitionScanner scanner = configureScanner(parserContext, element);
+		
+		// 查看该方法 俱体的扫描操作,俱体分析看下面
 		Set<BeanDefinitionHolder> beanDefinitions = scanner.doScan(basePackages);
 		registerComponents(parserContext.getReaderContext(), beanDefinitions, element);
 
 		return null;
 	}
 	
-	
+// 分析 	configureScanner 方法 
 protected ClassPathBeanDefinitionScanner configureScanner(ParserContext parserContext, Element element) {
 	
 	    // 使用默认的过滤器，默认值为 true
 		boolean useDefaultFilters = true;
-		
-		if (element.hasAttribute(USE_DEFAULT_FILTERS_ATTRIBUTE)) {//当有该属性时，就使用默认值
+		//当没有该属性 use-default-filters 时，就使用默认值，默认值为 true
+		if (element.hasAttribute(USE_DEFAULT_FILTERS_ATTRIBUTE)) {
 			useDefaultFilters = Boolean.valueOf(element.getAttribute(USE_DEFAULT_FILTERS_ATTRIBUTE));
 		}
 
 		// Delegate bean definition registration to scanner class.
 		
-		//创建 扫描器，扫描包下的所有文件 ，查看该方法
+		//创建 扫描器，扫描包下的所有文件 ，同时也是spring @Controller、@Service 的注册支持，查看该方法
 		ClassPathBeanDefinitionScanner scanner = createScanner(parserContext.getReaderContext(), useDefaultFilters);
+		
 		scanner.setResourceLoader(parserContext.getReaderContext().getResourceLoader());
 		scanner.setEnvironment(parserContext.getReaderContext().getEnvironment());
+		
 		scanner.setBeanDefinitionDefaults(parserContext.getDelegate().getBeanDefinitionDefaults());
 		scanner.setAutowireCandidatePatterns(parserContext.getDelegate().getAutowireCandidatePatterns());
 
@@ -1183,6 +1187,7 @@ protected ClassPathBeanDefinitionScanner configureScanner(ParserContext parserCo
 		}
 
 		try {
+		    // 查看该方法,俱体看下面 ，不重要
 			parseBeanNameGenerator(element, scanner);
 		}
 		catch (Exception ex) {
@@ -1196,6 +1201,7 @@ protected ClassPathBeanDefinitionScanner configureScanner(ParserContext parserCo
 			parserContext.getReaderContext().error(ex.getMessage(), parserContext.extractSource(element), ex.getCause());
 		}
 
+        //查看该方法，俱体分析看下面
 		parseTypeFilters(element, scanner, parserContext);
 
 		return scanner;
@@ -1208,14 +1214,275 @@ protected ClassPathBeanDefinitionScanner createScanner(XmlReaderContext readerCo
 }	
 
 public ClassPathBeanDefinitionScanner(BeanDefinitionRegistry registry, boolean useDefaultFilters) {
-
+            // 查看该方法
     		this(registry, useDefaultFilters, getOrCreateEnvironment(registry));
 	}
-```
+
+public ClassPathBeanDefinitionScanner(BeanDefinitionRegistry registry, boolean useDefaultFilters, Environment environment) {
+		//查看 super 方法
+		super(useDefaultFilters, environment);
+
+		Assert.notNull(registry, "BeanDefinitionRegistry must not be null");
+		this.registry = registry;
+
+		// Determine ResourceLoader to use.
+		if (this.registry instanceof ResourceLoader) {
+			setResourceLoader((ResourceLoader) this.registry);
+		}
+}
+// 分析 super 方法
+public ClassPathScanningCandidateComponentProvider(boolean useDefaultFilters, Environment environment) {
+		if (useDefaultFilters) {// spring 默认过滤器 注册；重点
+		    //查看该方法
+			registerDefaultFilters();
+		}
+		Assert.notNull(environment, "Environment must not be null");
+		this.environment = environment;
+}	
+
+// 分析 spring 默认过滤器注册过程，也说是让 spring 支持 Annotation 注解
+protected void registerDefaultFilters() {
+         // this.includeFilters 的数据结构
+        // private final List<TypeFilter> includeFilters = new LinkedList<TypeFilter>();
         
+        //AnnotationTypeFilter 类 中的 annotationType 字段表示注解类型，例如：@Component、@Controller、@Service、@Resource
+		//这里会扫描 @Component 注解，查看 Component 类所在的包，就会看到 Service、Controller 等注解
+		// 在 Controller 类中看到 @Component 就说明 @Controller 是 @Component的子注解
+		// 分析结果：这里会扫描到所有 @Component 的子注解，例如 @Controller、@Service等
+		// 将这些注解加入到集合中 includeFilters
+		this.includeFilters.add(new AnnotationTypeFilter(Component.class));
+		
+		ClassLoader cl = ClassPathScanningCandidateComponentProvider.class.getClassLoader();
+		try {
+		    // 添加 @ManagedBean 注解
+			this.includeFilters.add(new AnnotationTypeFilter(
+					((Class<? extends Annotation>) ClassUtils.forName("javax.annotation.ManagedBean", cl)), false));
+			logger.debug("JSR-250 'javax.annotation.ManagedBean' found and supported for component scanning");
+		}
+		catch (ClassNotFoundException ex) {
+			// JSR-250 1.1 API (as included in Java EE 6) not available - simply skip.
+		}
+		try {
+		    // 添加 @Named 注解
+			this.includeFilters.add(new AnnotationTypeFilter(
+					((Class<? extends Annotation>) ClassUtils.forName("javax.inject.Named", cl)), false));
+			logger.debug("JSR-330 'javax.inject.Named' annotation found and supported for component scanning");
+		}
+		catch (ClassNotFoundException ex) {
+			// JSR-330 API not available - simply skip.
+		}
+	}	
+```
 
+### AnnotationTypeFilter注解类型类图
+- annotationType 字段表示注解类型，例如：@Component、@Controller、@Service、@Resource
+![](./img/annotationTypeFilter注解类型类图.png)        
 
+### 分析 ComponentScanBeanDefinitionParser 类中的 parseBeanNameGenerator方法
+```
+	protected void parseBeanNameGenerator(Element element, ClassPathBeanDefinitionScanner scanner) {
+		if (element.hasAttribute(NAME_GENERATOR_ATTRIBUTE)) {
+			BeanNameGenerator beanNameGenerator = (BeanNameGenerator) instantiateUserDefinedStrategy(
+					element.getAttribute(NAME_GENERATOR_ATTRIBUTE), BeanNameGenerator.class,
+					scanner.getResourceLoader().getClassLoader());
+			scanner.setBeanNameGenerator(beanNameGenerator);
+		}
+	}
+```
+
+### 分析 ComponentScanBeanDefinitionParser 类中的 parseTypeFilters 方法
+- 当xml 配置文件中配置了 use-default-filters="false" 时就会获取 两个子元素 include-filter 和 exclude-filter
+- 这个方法解析完毕后，就要回到 ComponentScanBeanDefinitionParser 的 parse 方法中
+```
+	protected void parseTypeFilters(Element element, ClassPathBeanDefinitionScanner scanner, ParserContext parserContext) {
+		// Parse exclude and include filter elements.
+		ClassLoader classLoader = scanner.getResourceLoader().getClassLoader();
+		
+		NodeList nodeList = element.getChildNodes();
+		for (int i = 0; i < nodeList.getLength(); i++) {
+			Node node = nodeList.item(i);
+			if (node.getNodeType() == Node.ELEMENT_NODE) {
+			   
+			     //获取子元素的名子
+				String localName = parserContext.getDelegate().getLocalName(node);
+				try {
+					if (INCLUDE_FILTER_ELEMENT.equals(localName)) { //include-filter 元素的解析
+					    // createTypeFilter 方法中就会有 type 属性支持的类型有哪些
+						TypeFilter typeFilter = createTypeFilter((Element) node, classLoader, parserContext);
+						
+						// 将 该 type 属性类型加入到扫描器中
+						scanner.addIncludeFilter(typeFilter);
+					}
+					else if (EXCLUDE_FILTER_ELEMENT.equals(localName)) { // exclude-filter 元素的解析
+						TypeFilter typeFilter = createTypeFilter((Element) node, classLoader, parserContext);
+						scanner.addExcludeFilter(typeFilter);
+					}
+				}
+				catch (Exception ex) {
+					parserContext.getReaderContext().error(
+							ex.getMessage(), parserContext.extractSource(element), ex.getCause());
+				}
+			}
+		}
+	}
+```
+   
+### scanner.doScan(basePackages) 方法分析      
+```
+protected Set<BeanDefinitionHolder> doScan(String... basePackages) {
+		Assert.notEmpty(basePackages, "At least one base package must be specified");
+		Set<BeanDefinitionHolder> beanDefinitions = new LinkedHashSet<BeanDefinitionHolder>();
+		for (String basePackage : basePackages) {
+		    //查看该方法
+			Set<BeanDefinition> candidates = findCandidateComponents(basePackage);
+			for (BeanDefinition candidate : candidates) {
+				ScopeMetadata scopeMetadata = this.scopeMetadataResolver.resolveScopeMetadata(candidate);
+				candidate.setScope(scopeMetadata.getScopeName());
+				String beanName = this.beanNameGenerator.generateBeanName(candidate, this.registry);
+				if (candidate instanceof AbstractBeanDefinition) {
+					postProcessBeanDefinition((AbstractBeanDefinition) candidate, beanName);
+				}
+				if (candidate instanceof AnnotatedBeanDefinition) {
+					AnnotationConfigUtils.processCommonDefinitionAnnotations((AnnotatedBeanDefinition) candidate);
+				}
+				if (checkCandidate(beanName, candidate)) {
+					BeanDefinitionHolder definitionHolder = new BeanDefinitionHolder(candidate, beanName);
+					definitionHolder = AnnotationConfigUtils.applyScopedProxyMode(scopeMetadata, definitionHolder, this.registry);
+					beanDefinitions.add(definitionHolder);
+					registerBeanDefinition(definitionHolder, this.registry);
+				}
+			}
+		}
+		return beanDefinitions;
+	}
+
+//分析 findCandidateComponents 方法
+public Set<BeanDefinition> findCandidateComponents(String basePackage) {
+		Set<BeanDefinition> candidates = new LinkedHashSet<BeanDefinition>();
+		try {
+		    //将包中的 点　改为　/ 
+			String packageSearchPath = ResourcePatternResolver.CLASSPATH_ALL_URL_PREFIX +
+					resolveBasePackage(basePackage) + "/" + this.resourcePattern;
+			// 把上面的包 路径下的 所有的 class 文件 封装 为  resources 对象
+			// getResources 方法会递归的将 文件夹下的 class 文件 封装 为  resources 对象
+			// 通过 getResources 方法 进入 PathMatchingResourcePatternResolver 类 中的 getResources 方法
+			Resource[] resources = this.resourcePatternResolver.getResources(packageSearchPath);
+			boolean traceEnabled = logger.isTraceEnabled();
+			boolean debugEnabled = logger.isDebugEnabled();
+			for (Resource resource : resources) {
+				if (traceEnabled) {
+					logger.trace("Scanning " + resource);
+				}
+				if (resource.isReadable()) {
+					try {
+						MetadataReader metadataReader = this.metadataReaderFactory.getMetadataReader(resource);
+						if (isCandidateComponent(metadataReader)) {
+							ScannedGenericBeanDefinition sbd = new ScannedGenericBeanDefinition(metadataReader);
+							sbd.setResource(resource);
+							sbd.setSource(resource);
+							if (isCandidateComponent(sbd)) {
+								if (debugEnabled) {
+									logger.debug("Identified candidate component class: " + resource);
+								}
+								candidates.add(sbd);
+							}
+							else {
+								if (debugEnabled) {
+									logger.debug("Ignored because not a concrete top-level class: " + resource);
+								}
+							}
+						}
+						else {
+							if (traceEnabled) {
+								logger.trace("Ignored because not matching any filter: " + resource);
+							}
+						}
+					}
+					catch (Throwable ex) {
+						throw new BeanDefinitionStoreException(
+								"Failed to read candidate component class: " + resource, ex);
+					}
+				}
+				else {
+					if (traceEnabled) {
+						logger.trace("Ignored because not readable: " + resource);
+					}
+				}
+			}
+		}
+		catch (IOException ex) {
+			throw new BeanDefinitionStoreException("I/O failure during classpath scanning", ex);
+		}
+		return candidates;
+	}	
+```      
       
-      
-      
+### 分析 PathMatchingResourcePatternResolver 类中的 getResources(String locationPattern) 方法
+```
+@Override
+	public Resource[] getResources(String locationPattern) throws IOException {
+		Assert.notNull(locationPattern, "Location pattern must not be null");
+		if (locationPattern.startsWith(CLASSPATH_ALL_URL_PREFIX)) {
+			// a class path resource (multiple resources for same name possible)
+			if (getPathMatcher().isPattern(locationPattern.substring(CLASSPATH_ALL_URL_PREFIX.length()))) {
+				// a class path resource pattern
+				return findPathMatchingResources(locationPattern);
+			}
+			else {
+				// all class path resources with the given name
+				return findAllClassPathResources(locationPattern.substring(CLASSPATH_ALL_URL_PREFIX.length()));
+			}
+		}
+		else {
+			// Only look for a pattern after a prefix here
+			// (to not get fooled by a pattern symbol in a strange prefix).
+			int prefixEnd = locationPattern.indexOf(":") + 1;
+			if (getPathMatcher().isPattern(locationPattern.substring(prefixEnd))) {
+				// a file pattern
+				
+				//进入该方法
+				return findPathMatchingResources(locationPattern);
+			}
+			else {
+				// a single resource with the given name
+				return new Resource[] {getResourceLoader().getResource(locationPattern)};
+			}
+		}
+	}
+
+分析 findPathMatchingResources(locationPattern) 方法
+protected Resource[] findPathMatchingResources(String locationPattern) throws IOException {
+		String rootDirPath = determineRootDir(locationPattern);
+		String subPattern = locationPattern.substring(rootDirPath.length());
+		
+		Resource[] rootDirResources = getResources(rootDirPath);
+		Set<Resource> result = new LinkedHashSet<Resource>(16);
+		for (Resource rootDirResource : rootDirResources) {
+			rootDirResource = resolveRootDirResource(rootDirResource);
+			
+			======================>>
+			//获取url
+			URL rootDirURL = rootDirResource.getURL();
+			if (equinoxResolveMethod != null) {
+				if (rootDirURL.getProtocol().startsWith("bundle")) {
+					rootDirURL = (URL) ReflectionUtils.invokeMethod(equinoxResolveMethod, null, rootDirURL);
+					rootDirResource = new UrlResource(rootDirURL);
+				}
+			}
+			if (rootDirURL.getProtocol().startsWith(ResourceUtils.URL_PROTOCOL_VFS)) {
+				result.addAll(VfsResourceMatchingDelegate.findMatchingResources(rootDirURL, subPattern, getPathMatcher()));
+			}
+			else if (ResourceUtils.isJarURL(rootDirURL) || isJarResource(rootDirResource)) {
+				result.addAll(doFindPathMatchingJarResources(rootDirResource, rootDirURL, subPattern));
+			}
+			else {
+				result.addAll(doFindPathMatchingFileResources(rootDirResource, subPattern));
+			}
+		}
+		if (logger.isDebugEnabled()) {
+			logger.debug("Resolved location pattern [" + locationPattern + "] to resources " + result);
+		}
+		return result.toArray(new Resource[result.size()]);
+	}	
+```      
    

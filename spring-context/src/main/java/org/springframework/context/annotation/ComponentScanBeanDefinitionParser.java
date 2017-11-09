@@ -77,12 +77,19 @@ public class ComponentScanBeanDefinitionParser implements BeanDefinitionParser {
 
 	@Override
 	public BeanDefinition parse(Element element, ParserContext parserContext) {
+		// FIXME: 2017/11/8 这里具体的标签为 <context:component-scan  base-package="com.consult.action" />
+		// FIXME: 2017/11/8 获取标签的属性 base-package的值
 		String basePackage = element.getAttribute(BASE_PACKAGE_ATTRIBUTE);
 		basePackage = parserContext.getReaderContext().getEnvironment().resolvePlaceholders(basePackage);
+
+		// FIXME: 2017/11/8 配置多个包是以 逗号分隔的，所以这里要将以逗号分隔的包转化为数组
 		String[] basePackages = StringUtils.tokenizeToStringArray(basePackage,
 				ConfigurableApplicationContext.CONFIG_LOCATION_DELIMITERS);
 
 		// Actually scan for bean definitions and register them.
+		// 扫描bean定义并注册它们
+
+		// FIXME: 2017/11/8  查看该方法
 		ClassPathBeanDefinitionScanner scanner = configureScanner(parserContext, element);
 		Set<BeanDefinitionHolder> beanDefinitions = scanner.doScan(basePackages);
 		registerComponents(parserContext.getReaderContext(), beanDefinitions, element);
@@ -91,12 +98,15 @@ public class ComponentScanBeanDefinitionParser implements BeanDefinitionParser {
 	}
 
 	protected ClassPathBeanDefinitionScanner configureScanner(ParserContext parserContext, Element element) {
+		// FIXME: 2017/11/8 使用默认的过滤器，默认值为 true
 		boolean useDefaultFilters = true;
+		// FIXME: 2017/11/8  当没有该属性 use-default-filters 时，就使用默认值，默认值为 true
 		if (element.hasAttribute(USE_DEFAULT_FILTERS_ATTRIBUTE)) {
 			useDefaultFilters = Boolean.valueOf(element.getAttribute(USE_DEFAULT_FILTERS_ATTRIBUTE));
 		}
 
 		// Delegate bean definition registration to scanner class.
+		// FIXME: 2017/11/8 创建 扫描器，扫描包下的所有文件 ，查看该方法
 		ClassPathBeanDefinitionScanner scanner = createScanner(parserContext.getReaderContext(), useDefaultFilters);
 		scanner.setResourceLoader(parserContext.getReaderContext().getResourceLoader());
 		scanner.setEnvironment(parserContext.getReaderContext().getEnvironment());
