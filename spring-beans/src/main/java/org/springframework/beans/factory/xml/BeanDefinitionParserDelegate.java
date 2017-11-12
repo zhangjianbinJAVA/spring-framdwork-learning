@@ -1352,7 +1352,7 @@ public class BeanDefinitionParserDelegate {
             error("Unable to locate Spring NamespaceHandler for XML schema namespace [" + namespaceUri + "]", ele);
             return null;
         }
-        // FIXME: 2017/11/7 调用某个命名空间的处理器的 parse方法, 如 ContextNamespaceHandler类 cotext 命名空间处理类
+        // FIXME: 2017/11/7 调用某个命名空间的处理器的 parse方法, 如 ContextNamespaceHandler类 context 命名空间处理类
         return handler.parse(ele, new ParserContext(this.readerContext, this, containingBd));
         /**
          * handler 说明：

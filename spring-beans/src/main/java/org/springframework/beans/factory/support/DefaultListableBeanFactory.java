@@ -827,6 +827,8 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 							"] with [" + beanDefinition + "]");
 				}
 			}
+
+			// 将 beanDefinition 缓存到 map 中
 			this.beanDefinitionMap.put(beanName, beanDefinition);
 		}
 		else {
@@ -841,6 +843,8 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 					if (this.manualSingletonNames.contains(beanName)) {
 						Set<String> updatedSingletons = new LinkedHashSet<String>(this.manualSingletonNames);
 						updatedSingletons.remove(beanName);
+
+						// 将 list 赋值给 beanDefinitionNames ，beanDefinitionNames非常重要
 						this.manualSingletonNames = updatedSingletons;
 					}
 				}
@@ -848,6 +852,8 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			else {
 				// Still in startup registration phase
 				this.beanDefinitionMap.put(beanName, beanDefinition);
+
+				// 在beanDefinitionNames 中放入 beanName
 				this.beanDefinitionNames.add(beanName);
 				this.manualSingletonNames.remove(beanName);
 			}

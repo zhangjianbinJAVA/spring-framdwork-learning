@@ -150,6 +150,8 @@ public class BeanDefinitionReaderUtils {
 
 		// Register bean definition under primary name.
 		String beanName = definitionHolder.getBeanName();
+
+		// 注册 BeanDefinitionHolder 对象 ，查看该方法 DefaultListableBeanFactory 类中的 registerBeanDefinition 方法
 		registry.registerBeanDefinition(beanName, definitionHolder.getBeanDefinition());
 
 		// Register aliases for bean name, if any.
