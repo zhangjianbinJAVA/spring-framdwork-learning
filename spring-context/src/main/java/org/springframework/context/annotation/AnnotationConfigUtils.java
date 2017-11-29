@@ -169,6 +169,8 @@ public class AnnotationConfigUtils {
 			// FIXME: 2017/11/10 // 将 @Autowire 注解 注册进来，并创建了BeanDefinition对象
 			RootBeanDefinition def = new RootBeanDefinition(AutowiredAnnotationBeanPostProcessor.class);
 			def.setSource(source);
+
+			// FIXME: 2017/11/29 // 查看该方法 registerPostProcessor
 			beanDefs.add(registerPostProcessor(registry, def, AUTOWIRED_ANNOTATION_PROCESSOR_BEAN_NAME));
 		}
 
@@ -225,8 +227,11 @@ public class AnnotationConfigUtils {
 		definition.setRole(BeanDefinition.ROLE_INFRASTRUCTURE);
 
 		// 将上面的 RootBeanDefinition 也就是 BeanDefinition 对象进行缓存
-		// 查看 registerBeanDefinition 方法，就又进入了 缓存代码中了，也就是 DefaultListableBeanFactory 类中的 registerBeanDefinition 方法中
+		// 查看 registerBeanDefinition 方法，就又进入了 缓存代码中了，
+		// 也就是 DefaultListableBeanFactory 类中的 registerBeanDefinition 方法中
 		registry.registerBeanDefinition(beanName, definition);
+
+		// 又把 BeanDefinition 封装成  BeanDefinitionHolder 对象了
 		return new BeanDefinitionHolder(definition, beanName);
 	}
 

@@ -817,7 +817,7 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
 				}
 			}
 
-			// 如果时文件，就加入 集合中,分析到 此时，回到 ClassPathScanningCandidateComponentProvider 类中的 findCandidateComponents方法中
+			// 如果是文件，就加入 集合中,分析到 此时，回到 ClassPathScanningCandidateComponentProvider 类中的 findCandidateComponents方法中
 			if (getPathMatcher().match(fullPattern, currPath)) {
 				result.add(content);
 			}
