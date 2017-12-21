@@ -124,12 +124,15 @@ public class SimpleApplicationEventMulticaster extends AbstractApplicationEventM
 	@Override
 	public void multicastEvent(final ApplicationEvent event, ResolvableType eventType) {
 		ResolvableType type = (eventType != null ? eventType : resolveDefaultEventType(event));
+		// FIXME: 2017/12/4 // getApplicationListeners 获取所有的监听器，将事件广播给所有的监听器
 		for (final ApplicationListener<?> listener : getApplicationListeners(event, type)) {
 			Executor executor = getTaskExecutor();
 			if (executor != null) {
 				executor.execute(new Runnable() {
+					// FIXME: 2017/12/4 // 对每个 ApplicationListener 起个线程，进行调用 ApplicationListener 中的方法
 					@Override
 					public void run() {
+						// FIXME: 2017/12/4  // 查看该方法
 						invokeListener(listener, event);
 					}
 				});
@@ -155,6 +158,7 @@ public class SimpleApplicationEventMulticaster extends AbstractApplicationEventM
 		ErrorHandler errorHandler = getErrorHandler();
 		if (errorHandler != null) {
 			try {
+				// FIXME: 2017/12/4 调用  onApplicationEvent 方法
 				listener.onApplicationEvent(event);
 			}
 			catch (Throwable err) {

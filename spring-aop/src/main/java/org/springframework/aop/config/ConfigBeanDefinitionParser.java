@@ -58,7 +58,7 @@ import org.springframework.util.xml.DomUtils;
  * @author Ramnivas Laddad
  * @since 2.0
  */
-class ConfigBeanDefinitionParser implements BeanDefinitionParser {
+class  ConfigBeanDefinitionParser implements BeanDefinitionParser {
 
 	private static final String ASPECT = "aspect";
 	private static final String EXPRESSION = "expression";

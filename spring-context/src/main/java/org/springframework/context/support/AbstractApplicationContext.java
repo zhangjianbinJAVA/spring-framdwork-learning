@@ -379,6 +379,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			this.earlyApplicationEvents.add(applicationEvent);
 		}
 		else {
+			// FIXME: 2017/12/4  // spring 发布事件的过程就在这里，将事件传给所有spring 监听器，并调用 spring 监听器的 onApplicationEvent 方法
 			getApplicationEventMulticaster().multicastEvent(applicationEvent, eventType);
 		}
 
@@ -522,9 +523,13 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				postProcessBeanFactory(beanFactory);
 
 				// Invoke factory processors registered as beans in the context.
+				// FIXME: 2017/12/4 // 查看该方法，俱体分析看下面，涉及到spring 对 BeanDefinition 的扩展接口
 				invokeBeanFactoryPostProcessors(beanFactory);
 
 				// Register bean processors that intercept bean creation.
+				// FIXME: 2017/12/4 注册bean处理程序来拦截bean的创建
+
+				// FIXME: 2017/12/4 分析 registerBeanPostProcessors(beanFactory) 方法，完成BeanPostProcessors的注册
 				registerBeanPostProcessors(beanFactory);
 
 				// Initialize message source for this context.
@@ -537,9 +542,11 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				onRefresh();
 
 				// Check for listener beans and register them.
+				// FIXME: 2017/12/4 // 查看该方法
 				registerListeners();
 
 				// Instantiate all remaining (non-lazy-init) singletons.
+				// FIXME: 2017/12/4  beanDifinition的实例化，ioc依赖注入
 				finishBeanFactoryInitialization(beanFactory);
 
 				// Last step: publish corresponding event.
@@ -681,6 +688,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 * <p>Must be called before singleton instantiation.
 	 */
 	protected void invokeBeanFactoryPostProcessors(ConfigurableListableBeanFactory beanFactory) {
+		// FIXME: 2017/12/4 查看该方法 invokeBeanFactoryPostProcessors
 		PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors(beanFactory, getBeanFactoryPostProcessors());
 
 		// Detect a LoadTimeWeaver and prepare for weaving, if found in the meantime
@@ -803,14 +811,18 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 */
 	protected void registerListeners() {
 		// Register statically specified listeners first.
+		// FIXME: 2017/12/4 // getApplicationListeners() 获取容器中的所有监听器
 		for (ApplicationListener<?> listener : getApplicationListeners()) {
+			// FIXME: 2017/12/4 // 添加到集合中
 			getApplicationEventMulticaster().addApplicationListener(listener);
 		}
 
 		// Do not initialize FactoryBeans here: We need to leave all regular beans
 		// uninitialized to let post-processors apply to them!
+		// FIXME: 2017/12/4 // 获取 ApplicationListener 类型的所有 类的名字
 		String[] listenerBeanNames = getBeanNamesForType(ApplicationListener.class, true, false);
 		for (String listenerBeanName : listenerBeanNames) {
+			// FIXME: 2017/12/4 // 添加到集合中
 			getApplicationEventMulticaster().addApplicationListenerBean(listenerBeanName);
 		}
 
@@ -819,6 +831,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		this.earlyApplicationEvents = null;
 		if (earlyEventsToProcess != null) {
 			for (ApplicationEvent earlyEvent : earlyEventsToProcess) {
+				// FIXME: 2017/12/4   // 查看该方法
 				getApplicationEventMulticaster().multicastEvent(earlyEvent);
 			}
 		}
@@ -830,6 +843,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 */
 	protected void finishBeanFactoryInitialization(ConfigurableListableBeanFactory beanFactory) {
 		// Initialize conversion service for this context.
+		// FIXME: 2017/12/4 // conversionService 是一个标签，用于消息转换器		
 		if (beanFactory.containsBean(CONVERSION_SERVICE_BEAN_NAME) &&
 				beanFactory.isTypeMatch(CONVERSION_SERVICE_BEAN_NAME, ConversionService.class)) {
 			beanFactory.setConversionService(
